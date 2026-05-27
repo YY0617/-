@@ -5,10 +5,8 @@
 
 import { existsSync, mkdirSync, rmSync, statSync, copyFileSync, readdirSync, createWriteStream } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath, createRequire } from 'url';
-
-const require = createRequire(import.meta.url);
-const archiver = require('archiver');
+import { fileURLToPath } from 'url';
+import * as archiver from 'archiver';
 
 const __filename = fileURLToPath(import.meta.url);
 const SCRIPT_DIR = dirname(__filename);
@@ -25,15 +23,15 @@ function ensureDir(dir) {
 
 function copyDir(src, dest) {
   if (!existsSync(src)) return;
-  
+
   ensureDir(dest);
-  
+
   const entries = readdirSync(src, { withFileTypes: true });
-  
+
   for (const entry of entries) {
     const srcPath = join(src, entry.name);
     const destPath = join(dest, entry.name);
-    
+
     if (entry.isDirectory()) {
       copyDir(srcPath, destPath);
     } else {
@@ -61,9 +59,9 @@ function createZip() {
   }
 
   console.log('[TapTap小游戏打包] 开始压缩...');
-  
+
   const output = createWriteStream(OUTPUT_ZIP);
-  const archive = archiver('zip', { zlib: { level: 9 } });
+  const archive = archiver.default('zip', { zlib: { level: 9 } });
 
   output.on('close', () => {
     const stats = statSync(OUTPUT_ZIP);
@@ -91,7 +89,7 @@ function createZip() {
   archive.pipe(output);
   archive.directory(DIST_DIR, false);
   archive.file(join(PROJECT_DIR, 'game.json'), { name: 'game.json' });
-  
+
   const publicDir = join(PROJECT_DIR, 'public');
   if (existsSync(publicDir)) {
     archive.directory(publicDir, 'public');

@@ -65,7 +65,6 @@ export default defineConfig({
     assetsDir: 'assets',
     rollupOptions: {
       output: {
-        format: 'iife',
         inlineDynamicImports: true,
         assetFileNames: 'assets/[name]-[hash][extname]',
         entryFileNames: 'assets/[name]-[hash].js',
