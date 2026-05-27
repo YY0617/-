@@ -3,10 +3,12 @@
  * 适用于TapTap普通小游戏包体
  */
 
-import { existsSync, mkdirSync, rmSync, statSync, copyFileSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, rmSync, statSync, copyFileSync, readdirSync, createWriteStream } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import archiver from 'archiver';
+import { fileURLToPath, createRequire } from 'url';
+
+const require = createRequire(import.meta.url);
+const archiver = require('archiver');
 
 const __filename = fileURLToPath(import.meta.url);
 const SCRIPT_DIR = dirname(__filename);
@@ -60,7 +62,7 @@ function createZip() {
 
   console.log('[TapTap小游戏打包] 开始压缩...');
   
-  const output = new (require('fs').createWriteStream)(OUTPUT_ZIP);
+  const output = createWriteStream(OUTPUT_ZIP);
   const archive = archiver('zip', { zlib: { level: 9 } });
 
   output.on('close', () => {
