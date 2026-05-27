@@ -1,10 +1,7 @@
-import { existsSync, mkdirSync, rmSync, statSync, copyFileSync, readdirSync, createWriteStream } from 'fs';
+import { existsSync, mkdirSync, rmSync, statSync, copyFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-const archiver = require('archiver');
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const SCRIPT_DIR = dirname(__filename);
@@ -56,44 +53,51 @@ function createZip() {
     rmSync(OUTPUT_ZIP);
   }
 
-  console.log('[TapTap小游戏打包] 开始压缩...');
+  const tempDir = join(OUTPUT_DIR, 'temp-game');
+  if (existsSync(tempDir)) {
+    rmSync(tempDir, { recursive: true });
+  }
+  ensureDir(tempDir);
 
-  const output = createWriteStream(OUTPUT_ZIP);
-  const archive = archiver('zip', { zlib: { level: 9 } });
+  console.log('[TapTap小游戏打包] 复制构建文件...');
+  copyDir(DIST_DIR, tempDir);
 
-  output.on('close', () => {
-    const stats = statSync(OUTPUT_ZIP);
-    console.log('');
-    console.log('===========================================');
-    console.log('[TapTap小游戏打包] 打包完成!');
-    console.log(`[TapTap小游戏打包] 文件大小: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`[TapTap小游戏打包] 输出路径: ${OUTPUT_ZIP}`);
-    console.log('===========================================');
-    console.log('');
-    console.log('【TapTap普通小游戏上传步骤】');
-    console.log('  1. 登录 TapTap 开发者后台');
-    console.log('  2. 创建新游戏或选择已有游戏');
-    console.log('  3. 进入「游戏设置」→「TapPlay」');
-    console.log('  4. 选择「上传普通小游戏包体」');
-    console.log('  5. 上传 game.zip 文件');
-    console.log('  6. 填写游戏信息并提交审核');
-  });
-
-  archive.on('error', (err) => {
-    console.error('[TapTap小游戏打包] 压缩失败:', err);
-    process.exit(1);
-  });
-
-  archive.pipe(output);
-  archive.directory(DIST_DIR, false);
-  archive.file(join(PROJECT_DIR, 'game.json'), { name: 'game.json' });
+  console.log('[TapTap小游戏打包] 复制配置文件...');
+  copyFileSync(join(PROJECT_DIR, 'game.json'), join(tempDir, 'game.json'));
 
   const publicDir = join(PROJECT_DIR, 'public');
   if (existsSync(publicDir)) {
-    archive.directory(publicDir, 'public');
+    console.log('[TapTap小游戏打包] 复制 public 目录文件...');
+    copyDir(publicDir, join(tempDir, 'public'));
   }
 
-  archive.finalize();
+  console.log('[TapTap小游戏打包] 使用系统 zip 命令压缩...');
+  try {
+    execSync(`cd "${OUTPUT_DIR}" && zip -r game.zip temp-game/*`, { stdio: 'inherit', shell: true });
+    rmSync(tempDir, { recursive: true });
+  } catch (err) {
+    console.error('[TapTap小游戏打包] 压缩失败:', err);
+    if (existsSync(tempDir)) {
+      rmSync(tempDir, { recursive: true });
+    }
+    process.exit(1);
+  }
+
+  const stats = statSync(OUTPUT_ZIP);
+  console.log('');
+  console.log('===========================================');
+  console.log('[TapTap小游戏打包] 打包完成!');
+  console.log(`[TapTap小游戏打包] 文件大小: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+  console.log(`[TapTap小游戏打包] 输出路径: ${OUTPUT_ZIP}`);
+  console.log('===========================================');
+  console.log('');
+  console.log('【TapTap普通小游戏上传步骤】');
+  console.log('  1. 登录 TapTap 开发者后台');
+  console.log('  2. 创建新游戏或选择已有游戏');
+  console.log('  3. 进入「游戏设置」→「TapPlay」');
+  console.log('  4. 选择「上传普通小游戏包体」');
+  console.log('  5. 上传 game.zip 文件');
+  console.log('  6. 填写游戏信息并提交审核');
 }
 
 createZip();
