@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Hello TapTap</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    h1 { font-size: 36px; margin-bottom: 16px; }
+    p { font-size: 18px; opacity: 0.9; margin-bottom: 24px; }
+    .status {
+      background: rgba(255,255,255,0.2);
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      max-width: 300px;
+    }
+    #logs {
+      margin-top: 20px;
+      text-align: left;
+      font-family: monospace;
+      font-size: 12px;
+      background: rgba(0,0,0,0.3);
+      padding: 12px;
+      border-radius: 8px;
+      max-width: 300px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #logs div { margin: 4px 0; }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .info { color: #93c5fd; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 Hello TapTap!</h1>
+    <p>最小化测试示例</p>
+    <div class="status" id="status">正在检测环境...</div>
+    <div id="logs"></div>
+  </div>
+
+  <script>
+    var logs = [];
+    function log(msg, type) {
+      type = type || 'info';
+      logs.push({ msg: msg, type: type });
+      var el = document.getElementById('logs');
+      if (el) {
+        var d = document.createElement('div');
+        d.className = type;
+        d.textContent = msg;
+        el.appendChild(d);
+      }
+      console.log('[TapTap Test]', msg);
+    }
+
+    function updateStatus(msg) {
+      var el = document.getElementById('status');
+      if (el) el.textContent = msg;
+    }
+
+    log('=== 环境检测开始 ===');
+
+    // 检测基本环境
+    log('window 存在: ' + (typeof window !== 'undefined'), 'success');
+    log('document 存在: ' + (typeof document !== 'undefined'), 'success');
+    log('navigator 存在: ' + (typeof navigator !== 'undefined'), 'success');
+    log('localStorage 存在: ' + (typeof localStorage !== 'undefined'), 'success');
+
+    // 检测 TapTap 环境
+    var hasTap = typeof tap !== 'undefined';
+    log('tap 对象存在: ' + hasTap, hasTap ? 'success' : 'error');
+
+    if (hasTap) {
+      log('tap 类型: ' + typeof tap, 'info');
+      log('tap 属性: ' + Object.keys(tap).join(', '), 'info');
+
+      // 尝试调用 tap.init
+      if (typeof tap.init === 'function') {
+        log('tap.init 方法存在，尝试调用...', 'info');
+        try {
+          tap.init({
+            appId: 'tapmcgrpxwxpctofs9',
+            clientId: 'hboyjapnc1bmmcthbj',
+            success: function(res) {
+              log('tap.init 成功: ' + JSON.stringify(res), 'success');
+              updateStatus('TapTap SDK 初始化成功！');
+            },
+            fail: function(err) {
+              log('tap.init 失败: ' + JSON.stringify(err), 'error');
+              updateStatus('TapTap SDK 初始化失败');
+            }
+          });
+        } catch (e) {
+          log('tap.init 调用异常: ' + e.message, 'error');
+          updateStatus('tap.init 调用异常');
+        }
+      } else {
+        log('tap.init 方法不存在', 'error');
+        updateStatus('tap.init 方法不存在');
+      }
+    } else {
+      updateStatus('非 TapTap 环境（这是正常的，在 TapTap 客户端中会显示 tap 对象）');
+    }
+
+    log('=== 环境检测完成 ===');
+    log('如果你能看到这段文字，说明 HTML + JS 加载正常！');
+  </script>
+</body>
+</html>

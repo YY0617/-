@@ -1,0 +1,61 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
+import { initTapTapSDK, TapTapSDK } from './utils/tapTapSDK';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Failed to find root element');
+}
+
+function hideLoadingScreen() {
+  try {
+    const hideFn = (window as any).__hideLoading;
+    if (typeof hideFn === 'function') {
+      hideFn();
+    }
+  } catch (e) {
+    console.warn('[App] hide loading error:', e);
+  }
+}
+
+function renderApp(error?: Error) {
+  try {
+    const root = ReactDOM.createRoot(rootElement!);
+    root.render(
+      <React.StrictMode>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </React.StrictMode>
+    );
+    hideLoadingScreen();
+  } catch (e) {
+    console.error('[App] 渲染失败:', e);
+    hideLoadingScreen();
+  }
+}
+
+async function bootstrap() {
+  try {
+    await initTapTapSDK();
+  } catch (e) {
+    console.warn('[App] TapTap SDK初始化失败，继续运行:', e);
+  }
+
+  try {
+    const systemInfo = TapTapSDK.getSystemInfo();
+    if (systemInfo) {
+      const fontSize = Math.min(window.innerWidth / 375, 1.2);
+      document.documentElement.style.fontSize = `${16 * fontSize}px`;
+    }
+  } catch (e) {
+    console.warn('[App] 系统信息获取失败:', e);
+  }
+
+  renderApp();
+}
+
+bootstrap();
